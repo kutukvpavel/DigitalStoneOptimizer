@@ -8,6 +8,7 @@
   <ItemGroup>
     <PackageReference Include="AssimpNet" Version="4.1.0" />
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
+    <PackageReference Include="geometry3Sharp" Version="1.0.324" />
     <PackageReference Include="MathNet.Numerics" Version="4.15.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta13" />
