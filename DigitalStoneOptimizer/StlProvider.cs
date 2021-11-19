@@ -32,9 +32,9 @@ namespace DigitalStoneOptimizer
         /// <param name="spatial"></param>
         /// <param name="elevation">z coordinate</param>
         /// <returns></returns>
-        public static PointF[] GetSectionPoints(StoneMeshData data, float elevation)
+        public static Vector2f[] GetSectionPoints(StoneMeshData data, float elevation)
         {
-            var pts = new PointF[(int)MathF.Floor(360 / RayAngleStep)];
+            var pts = new Vector2f[(int)MathF.Floor(360 / RayAngleStep)];
             var origin = new Vector3f(0, 0, elevation);
             var rotate = new TransformSequence();
             rotate.AppendRotation(new Quaternionf(origin, RayAngleStep));
@@ -46,12 +46,17 @@ namespace DigitalStoneOptimizer
                 if (res != DMesh3.InvalidID)
                 {
                     var intersection = MeshQueries.TriangleIntersection(data.Mesh, res, ray);
-                    var v = ray.PointAt(intersection.RayParameter);
-                    pts[i] = new PointF((float)v.x, (float)v.y);
+                    pts[i] = (Vector2f)ray.PointAt(intersection.RayParameter).xy;
+                }
+                else
+                {
+                    pts[i] = Vector2f.Zero;
                 }
                 direction = rotate.TransformV(direction);
             }
             return pts;
         }
+
+        public static PointF ToPointF(this Vector2f v) => new PointF(v.x, v.y);
     }
 }
