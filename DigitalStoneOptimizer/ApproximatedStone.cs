@@ -16,7 +16,7 @@ namespace DigitalStoneOptimizer
             double startFrom = data.Mesh.CachedBounds.Min.z
                 + (data.Mesh.CachedBounds.Height - Math.Floor(fraction) * step) / 2;
             //First and last slices have no pair and have to be calculated separately
-            g3.Vector2f[] lastPoints = StlProvider.GetSectionPoints(data, (float)startFrom);
+            g3.Vector2f[] lastPoints = GeometryProvider.GetSectionPoints(data, (float)startFrom);
             Sections[0] = new StoneSection(lastPoints, 
                 , step, (float)startFrom - step);
             for (int i = 1; i < numberOfSlices; i++)
@@ -24,7 +24,7 @@ namespace DigitalStoneOptimizer
                 float currentLevel = (float)startFrom + step * i;
                 //Build each sheet from 2 adjacent sections taking their union
                 //Growth direction doesn't matter this way
-                var currentPoints = StlProvider.GetSectionPoints(data, currentLevel);
+                var currentPoints = GeometryProvider.GetSectionPoints(data, currentLevel);
                 //Since ray configuration is constant, we can compare points at equal indexes
                 g3.Vector2f[] union = new g3.Vector2f[currentPoints.Length];
                 for (int j = 0; j < union.Length; j++)

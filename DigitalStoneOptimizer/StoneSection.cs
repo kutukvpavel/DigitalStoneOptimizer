@@ -1,5 +1,4 @@
 ﻿using g3;
-using MathNet.Numerics.LinearAlgebra;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -26,70 +25,20 @@ namespace DigitalStoneOptimizer
             pb.CloseFigure();
             IPath outer = pb.Build();
             pb.Reset();
-            PointF last = OffsetPointToCenter(vectors[^1], vectors[0], vectors[1], stripWidth).ToPointF();
+            PointF last = GeometryProvider.OffsetPointToCenter(vectors[^1], vectors[0], vectors[1], stripWidth).ToPointF();
             pb.SetOrigin(last);
             int len = vectors.Length - 1;
             for (int i = 1; i < len; i++)
             {
                 //Build inner path maintaining strip width
                 //Offset each point towards the center of an inscribed circle
-                var cur = OffsetPointToCenter(vectors[i - 1], vectors[i], vectors[i + 1], stripWidth).ToPointF();
+                var cur = GeometryProvider.OffsetPointToCenter(vectors[i - 1], vectors[i], vectors[i + 1], stripWidth).ToPointF();
                 pb.AddLine(last, cur);
                 last = cur;
             }
-            pb.AddLine(last, OffsetPointToCenter(vectors[^2], vectors[^1], vectors[0], stripWidth).ToPointF());
+            pb.AddLine(last, GeometryProvider.OffsetPointToCenter(vectors[^2], vectors[^1], vectors[0], stripWidth).ToPointF());
             var inner = pb.Build();
             Poly = new ComplexPolygon(outer, inner);
-        }
-
-        /// <summary>
-        /// Offset one point out of 3 towards the center of a circle constructed upon those points
-        /// </summary>
-        /// <param name="shapeCenter">Expected center of mass of the section to check the offset direction against</param>
-        /// <param name="prev"></param>
-        /// <param name="current">The point to offset (presumably the middle one)</param>
-        /// <param name="next"></param>
-        /// <param name="width"></param>
-        /// <returns></returns>
-        private static Vector2f OffsetPointToCenter(Vector2f prev, Vector2f current, Vector2f next, float width)
-        {
-            //https://math.stackexchange.com/questions/213658/get-the-equation-of-a-circle-when-given-3-points
-            var arr = new PointF[] { prev.ToPointF(), current.ToPointF(), next.ToPointF() };
-            var m11 = CreateMatrix.Dense<float>(3, 3);
-            var m12 = CreateMatrix.Dense<float>(3, 3);
-            var m13 = CreateMatrix.Dense<float>(3, 3);
-            for (int i = 0; i < 3; i++)
-            {
-                m11[i, 0] = arr[i].X;
-                m11[i, 1] = arr[i].Y;
-                m11[i, 2] = 1;
-                m12[i, 0] = m11[i, 0] * m11[i, 0] + m11[i, 1] * m11[i, 1];
-                m12[i, 1] = m11[i, 1];
-                m12[i, 2] = 1;
-                m13[i, 0] = m12[i, 0];
-                m13[i, 1] = m11[i, 0];
-                m13[i, 2] = 1;
-            }
-            float det11x2 = m11.Determinant() * 2;
-            Vector2f displacement;
-            Vector2f currentVector = new Vector2f(current.x, current.y);
-            if (MathF.Abs(det11x2) < float.Epsilon)
-            {
-                //Points lie on a straight line
-                displacement = 
-                    new Vector2f(current.y - prev.y, prev.x - current.x); //original (x,y) -> normal (y,-x)
-            }
-            else
-            {
-                //Points form a triangle
-                float x0 = m12.Determinant() / det11x2;
-                float y0 = m13.Determinant() / det11x2;
-                displacement = currentVector - new Vector2f(x0, y0);
-            }
-            displacement *= width / displacement.Length;
-            //We already rely (during raytracing section calculation) on points (0,0,z) being inside our mesh
-            //Therefore we can use current radius-vector to verify direction of the offset to handle linear points and concave shapes
-            return displacement.Dot(currentVector) < 0 ? (currentVector + displacement) : (currentVector - displacement);
         }
 
         public ComplexPolygon Poly { get; private set; }

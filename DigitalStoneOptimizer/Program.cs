@@ -11,7 +11,7 @@ namespace DigitalStoneOptimizer
             Console.WriteLine("DigitalStone toolkit started.");
             Parser.Default.ParseArguments<CliOptions>(args).WithParsed(x =>
             {
-                var data = StlProvider.Load(x.ModelFile);
+                var data = GeometryProvider.Load(x.ModelFile);
                 ApproximatedStone s = new ApproximatedStone(data, x.SheetThickness);
                 switch (x.Mode)
                 {
