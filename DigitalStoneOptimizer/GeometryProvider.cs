@@ -9,6 +9,8 @@ namespace DigitalStoneOptimizer
 {
     public static class GeometryProvider
     {
+        private const float TwoEpsilon = 2 * float.Epsilon;
+
         public static float RayAngleStep { get; set; } = 1; //deg
 
         public static StoneMeshData Load(string path)
@@ -89,7 +91,7 @@ namespace DigitalStoneOptimizer
             float det11x2 = m11.Determinant() * 2;
             Vector2f displacement;
             Vector2f currentVector = new Vector2f(current.x, current.y);
-            if (MathF.Abs(det11x2) < float.Epsilon)
+            if (MathF.Abs(det11x2) < TwoEpsilon)
             {
                 //Points lie on a straight line
                 displacement =
