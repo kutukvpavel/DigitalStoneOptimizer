@@ -28,7 +28,7 @@ namespace DigitalStoneOptimizer
             var pts = new Vector2d[GeometryProvider.DivideCircleInSectors(rayAngularStep)];
             var origin = new Vector3f(0, 0, elevation);
             var rotate = new TransformSequence();
-            rotate.AppendRotation(new Quaternionf(origin, rayAngularStep));
+            rotate.AppendRotation(new Quaternionf(Vector3f.AxisZ, rayAngularStep));
             var direction = Vector3d.AxisX;
             for (int i = 0; i < pts.Length; i++)
             {

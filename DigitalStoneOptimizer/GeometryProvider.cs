@@ -1,7 +1,6 @@
 ﻿using g3;
 using MathNet.Numerics.LinearAlgebra;
 using netDxf;
-using netDxf.Objects;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using System;
@@ -29,20 +28,33 @@ namespace DigitalStoneOptimizer
             return null;
         }
 
-        public static void SaveFbx(DMesh3 mesh, string path)
+        public static void SaveStl(DMesh3 mesh, string path)
         {
             using StandardMeshWriter writer = new StandardMeshWriter();
             writer.Write(path, new List<WriteMesh>() { new WriteMesh(mesh) }, WriteOptions.Defaults);
         }
 
-        public static void SaveDxf(IEnumerable<Group> obj, string path)
+        public static void SaveDxf(ApproximatedStone s, string path)
         {
             var doc = new DxfDocument();
-            foreach (var item in obj)
-            {
-                doc.Groups.Add(item);
-            }
+            s.DrawDxf(doc);
             doc.Save(path);
+        }
+
+        /// <summary>
+        /// Move <paramref name="current"/> along the normal vector of current polygon edge.
+        /// Generated normals point to the left side of the edge vector (next - current),
+        /// so positive <paramref name="width"/> works for counterclockwise path traversal
+        /// </summary>
+        /// <param name="current"></param>
+        /// <param name="next"></param>
+        /// <param name="width">Distance to move</param>
+        /// <returns></returns>
+        public static Vector2d OffsetPointAlongNormal(Vector2d current, Vector2d next, float width)
+        {
+            Vector2d norm = (next - current).GetNormalVector();
+            norm *= width / norm.Length;
+            return current + norm;
         }
 
         /// <summary>
@@ -78,8 +90,7 @@ namespace DigitalStoneOptimizer
             if (Math.Abs(det11x2) <= TwoEpsilon)
             {
                 //Points lie on a straight line
-                displacement =
-                    new Vector2d(current.y - prev.y, prev.x - current.x); //original (x,y) -> normal (y,-x)
+                displacement = (next - prev).GetNormalVector();
             }
             else
             {
@@ -95,24 +106,25 @@ namespace DigitalStoneOptimizer
                 (current + displacement) : (current - displacement);
         }
 
-        public static void MeshCap(Vector3d[] v, List<Triangle3d> t, int index, int count)
+        public static void MeshCap(List<Index3i> t, int index, int count)
         {
             count += index;
             for (int i = index + 1; i < count; i++)
             {
-                t.Add(new Triangle3d(v[index], v[i - 1], v[i])); //Simple fan triangulation
+                t.Add(new Index3i(index, i - 1, i)); //Simple fan triangulation
             }
         }
 
-        public static void MeshJoint(Vector3d[] v, List<Triangle3d> t, int index, int count)
+        public static void MeshJoint(List<Index3i> t, int index, int count)
         {
-            for (int i = 0; i < count; i++)
+            for (int i = 1; i < count; i++)
             {
-                var r = i % 2 == 0 ?
-                    new Triangle3d(v[i + index], v[i + 1 + index], v[i - count + index]) :
-                    new Triangle3d(v[i + index], v[i - count + index], v[i + 1 - count + index]);
-                t.Add(r);
+                t.Add(new Index3i(i - 1 + index, i + index, i - 1 - count + index));
+                t.Add(new Index3i(i - 1 - count + index, i + index, i - count + index));
             }
+            //Close this surface
+            t.Add(new Index3i(index + count - 1, index, index - 1));
+            t.Add(new Index3i(index - 1, index, index - count));
         }
 
         #region Extensions
@@ -148,6 +160,32 @@ namespace DigitalStoneOptimizer
         }
         public static IEnumerable<Vector3> ToDxfVectorsWithElevation(this IEnumerable<Vector2d> arr, float elevation)
             => arr.Select(x => new Vector3(x.x, x.y, elevation));
+        /// <summary>
+        /// Rotates current vector 90deg counterclockwise to create a normal vector (non-normalized)
+        /// </summary>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        public static Vector2d GetNormalVector(this Vector2d v) => new Vector2d(-v.y, v.x);
+        public static Vector3f Abs(this Vector3f v) => new Vector3f(MathF.Abs(v.x), MathF.Abs(v.y), MathF.Abs(v.z));
+        public static Polygon2d FixedAngularStepUnion(this Polygon2d first, Polygon2d second)
+        {
+            //Since ray configuration is constant, we can compare points at equal indexes
+            Polygon2d union = new Polygon2d();
+            for (int j = 0; j < first.VertexCount; j++)
+            {
+                union.AppendVertex(second[j].LengthSquared > first[j].LengthSquared ? second[j] : first[j]);
+            }
+            return union;
+        }
+        public static Polygon2d FixedAngularStepIntersection(this Polygon2d first, Polygon2d second)
+        {
+            Polygon2d intersection = new Polygon2d();
+            for (int i = 0; i < first.VertexCount; i++)
+            {
+                intersection.AppendVertex(second[i].LengthSquared < first[i].LengthSquared ? second[i] : first[i]);
+            }
+            return intersection;
+        }
 
         #endregion
     }
