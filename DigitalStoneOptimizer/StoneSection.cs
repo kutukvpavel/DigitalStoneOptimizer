@@ -13,44 +13,60 @@ namespace DigitalStoneOptimizer
     {
         public static float PenThickness { get; set; } = 5;
 
-        public StoneSection(Vector2f[] vectors, float stripWidth, float thickness, float elevation)
+        private StoneSection(float thickness, float elevation, float widthParam)
         {
             Elevation = elevation;
             Thickness = thickness;
-            StripWidth = stripWidth;
-            var points = vectors.Select(x => x.ToPointF());
-            PathBuilder pb = new PathBuilder();
-            pb.SetOrigin(points.First());
-            pb.AddLines(points.Skip(1));
-            pb.CloseFigure();
-            IPath outer = pb.Build();
-            pb.Reset();
-            PointF last = GeometryProvider.OffsetPointToCenter(vectors[^1], vectors[0], vectors[1], stripWidth).ToPointF();
-            pb.SetOrigin(last);
-            int len = vectors.Length - 1;
+            Overlap = widthParam;
+        }
+        public StoneSection(Polygon2d currentBoundary, Polygon2d lastBoundary, float overlap, float thickness, float elevation)
+            : this(thickness, elevation, overlap)
+        {
+            if (lastBoundary.Contains(currentBoundary))
+            {
+                var t = lastBoundary;
+                lastBoundary = currentBoundary;
+                currentBoundary = t;
+            }
+            Polygon2d inner = new Polygon2d();
+            inner.AppendVertex(
+                GeometryProvider.OffsetPointToCenter(lastBoundary.Vertices[^1], lastBoundary[0], lastBoundary[1], overlap));
+            int len = lastBoundary.VertexCount - 1;
             for (int i = 1; i < len; i++)
             {
                 //Build inner path maintaining strip width
                 //Offset each point towards the center of an inscribed circle
-                var cur = GeometryProvider.OffsetPointToCenter(vectors[i - 1], vectors[i], vectors[i + 1], stripWidth).ToPointF();
-                pb.AddLine(last, cur);
-                last = cur;
+                inner.AppendVertex(
+                    GeometryProvider.OffsetPointToCenter(lastBoundary[i - 1], lastBoundary[i], lastBoundary[i + 1], overlap));
             }
-            pb.AddLine(last, GeometryProvider.OffsetPointToCenter(vectors[^2], vectors[^1], vectors[0], stripWidth).ToPointF());
-            var inner = pb.Build();
-            Poly = new ComplexPolygon(outer, inner);
+            inner.AppendVertex( 
+                GeometryProvider.OffsetPointToCenter(lastBoundary.Vertices[^2], lastBoundary.Vertices[^1], lastBoundary[0], overlap));
+            Poly = new GeneralPolygon2d(currentBoundary);
+            Poly.AddHole(inner, false, false);
+        }
+        public StoneSection(Polygon2d currentBoundary, float thickness, float elevation)
+            : this(thickness, elevation, float.NaN)
+        {
+            Poly = new GeneralPolygon2d(currentBoundary);
         }
 
-        public ComplexPolygon Poly { get; private set; }
-        public float StripWidth { get; private set; }
+        public float Overlap { get; private set; }
+        public GeneralPolygon2d Poly { get; private set; }
         public float Thickness { get; private set; }
         public float Elevation { get; private set; }
+        public float Top { get => Elevation + Thickness; }
 
-        public Image<Rgb24> GetImage()
+        public Image<Rgba32> GetImage()
         {
-            var bounds = Rectangle.Ceiling(Poly.Bounds);
-            var res = new Image<Rgb24>(bounds.Width, bounds.Height, Color.White);
-            res.Mutate(x => x.Draw(Pens.Solid(Color.Black, PenThickness), new PathCollection(Poly.Paths)));
+            var bounds = Rectangle.Ceiling(Poly.Outer.Bounds.ToRectangleF());
+            var res = new Image<Rgba32>(bounds.Width, bounds.Height, Color.Transparent);
+            var poly = Poly.ToComplexPolygon();
+            res.Mutate(x => x.Draw(Pens.Solid(Color.Black, PenThickness), new PathCollection(poly.Paths)));
+            /*res.Mutate(x =>
+            {
+                x.Fill(Brushes.Solid(Color.LightBlue), poly.Paths.First());
+                x.Fill(Brushes.Solid(Color.WhiteSmoke), poly.Paths.ElementAt(1));
+            });*/
             return res;
         }
     }

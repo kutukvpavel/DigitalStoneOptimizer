@@ -19,5 +19,7 @@ namespace DigitalStoneOptimizer
         public Modes Mode { get; set; }
         [Option('t', Required = true, HelpText = "Sheet [T]hickness")]
         public float SheetThickness { get; set; }
+        [Option('o', Required = true, HelpText = "Neighbouring section [O]verlap")]
+        public float DesiredOverlap { get; set; }
     }
 }

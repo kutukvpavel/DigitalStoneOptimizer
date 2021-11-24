@@ -14,5 +14,6 @@ namespace DigitalStoneOptimizer
 
         public StoneSection Model { get; }
         public float Elevation { get; }
+        public float Top { get => Elevation + Model.Thickness; }
     }
 }
