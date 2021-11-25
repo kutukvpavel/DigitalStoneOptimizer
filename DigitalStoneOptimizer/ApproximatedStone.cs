@@ -16,6 +16,10 @@ namespace DigitalStoneOptimizer
     {
         public static float RayAngleStep { get; set; } = 1; //deg
 
+        public ApproximatedStone(IEnumerable<StoneSection> ss)
+        {
+            Sections = ss.ToArray();
+        }
         public ApproximatedStone(StoneMeshData data, float step, float desiredOverlap) // strip width calculation - ????
         {
             double fraction = data.Mesh.GetBounds().Diagonal.z / step; //Height is not height! Diagonal vector somwhow is composed of (len,wid,height)
@@ -82,27 +86,12 @@ namespace DigitalStoneOptimizer
         public void DrawDxf(DxfDocument doc)
         {
             var outerLayer = new Layer($"{Elevation:F0} Outer") { Color = AciColor.Cyan };
-            var innerLayer = new Layer($"{Elevation:F0} Inner") { Color = AciColor.Green }; 
+            var innerLayer = new Layer($"{Elevation:F0} Inner") { Color = AciColor.Green };
             doc.Layers.Add(outerLayer);
             doc.Layers.Add(innerLayer);
             for (int i = 0; i < Sections.Length; i++)
             {
-                var s = GetPositionedStoneSection(i);
-                //Outer
-                var g = new Group($"{Elevation:F0} plus {s.Elevation:F0}");
-                g.Entities.Add(
-                    new Polyline(s.Model.Poly.Outer.Vertices.ToDxfVectorsWithElevation(s.Elevation), true) { Layer = outerLayer });
-                g.Entities.Add(
-                    new Polyline(s.Model.Poly.Outer.Vertices.ToDxfVectorsWithElevation(s.Top), true) { Layer = outerLayer });
-                //Inner
-                if (s.Model.Poly.Holes.Any())
-                {
-                    g.Entities.Add(
-                        new Polyline(s.Model.Poly.Holes[0].Vertices.ToDxfVectorsWithElevation(s.Elevation), true) { Layer = innerLayer });
-                    g.Entities.Add(
-                        new Polyline(s.Model.Poly.Holes[0].Vertices.ToDxfVectorsWithElevation(s.Top), true) { Layer = innerLayer });
-                }
-                doc.Groups.Add(g);
+                GetPositionedStoneSection(i).DrawDxf(doc, outerLayer, innerLayer, Elevation);
             }
         }
 

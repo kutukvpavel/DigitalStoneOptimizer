@@ -160,6 +160,8 @@ namespace DigitalStoneOptimizer
         }
         public static IEnumerable<Vector3> ToDxfVectorsWithElevation(this IEnumerable<Vector2d> arr, float elevation)
             => arr.Select(x => new Vector3(x.x, x.y, elevation));
+        public static IEnumerable<Vector3> ToDxfVectorsWithOffsetAndElevation(this IEnumerable<Vector2d> arr, float elevation, float xOffset)
+            => arr.Select(x => new Vector3(x.x + xOffset, x.y, elevation));
         /// <summary>
         /// Rotates current vector 90deg counterclockwise to create a normal vector (non-normalized)
         /// </summary>

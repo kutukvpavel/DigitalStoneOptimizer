@@ -7,7 +7,9 @@ namespace DigitalStoneOptimizer
 {
     public enum Modes
     {
-        PreviewGeometry
+        PreviewGeometry,
+        GenerateMillingData,
+        AssessProductionVolume
     }
 
     public class CliOptions
@@ -21,5 +23,7 @@ namespace DigitalStoneOptimizer
         public float SheetThickness { get; set; }
         [Option('o', Required = true, HelpText = "Neighbouring section [O]verlap")]
         public float DesiredOverlap { get; set; }
+        [Option('n', Required = false, Default = 1, HelpText = "[N]umber of stones to mill")]
+        public int NumberOfStones { get; set; }
     }
 }
