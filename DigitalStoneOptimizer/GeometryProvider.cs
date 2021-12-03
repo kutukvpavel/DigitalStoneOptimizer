@@ -127,6 +127,41 @@ namespace DigitalStoneOptimizer
             t.Add(new Index3i(index - 1, index, index - count));
         }
 
+        /// <summary>
+        /// FOR FIXED ANGULAR STEP VERTICES ONLY
+        /// </summary>
+        /// <param name="outer"></param>
+        /// <param name="inner"></param>
+        /// <param name="shift"></param>
+        /// <param name="clearance"></param>
+        /// <returns></returns>
+        public static bool FitsWithShift(this Polygon2d outer, Polygon2d inner, out Vector2f shift, float clearance = 0)
+        {
+            Polygon2d copy = new Polygon2d(inner);
+            if (copy.IsClockwise) clearance = -clearance;
+            copy.PolyOffset(clearance);
+            shift = new Vector2f();
+
+            //Find a pair of vertices that are the furthest apart.
+            double lastDistance = 0;
+            for (int i = 0; i < copy.VertexCount; i++)
+            {
+                var item = copy.Vertices[i];
+                if (item.LengthSquared > outer.Vertices[i].LengthSquared)
+                {
+                    double currentDistance = outer.DistanceSquared(item, out int nearestSegment, out _);
+                    if (currentDistance > lastDistance)
+                    {
+                        shift = (Vector2f)(outer.Vertices[nearestSegment] - item);
+                        lastDistance = currentDistance;
+                    }
+                }
+            }
+
+            copy.Translate(shift);
+            return outer.Contains(copy);
+        }
+
         #region Extensions
 
         public static PointF ToPointF(this Vector2f v) => new PointF(v.x, v.y);
@@ -158,10 +193,12 @@ namespace DigitalStoneOptimizer
                 dest[index++] = new Vector3d(item.x, item.y, elev);
             }
         }
-        public static IEnumerable<Vector3> ToDxfVectorsWithElevation(this IEnumerable<Vector2d> arr, float elevation)
+        public static IEnumerable<Vector3> ToDxfVectorsWith(this IEnumerable<Vector2d> arr, float elevation)
             => arr.Select(x => new Vector3(x.x, x.y, elevation));
-        public static IEnumerable<Vector3> ToDxfVectorsWithOffsetAndElevation(this IEnumerable<Vector2d> arr, float elevation, float xOffset)
+        public static IEnumerable<Vector3> ToDxfVectorsWith(this IEnumerable<Vector2d> arr, float elevation, float xOffset)
             => arr.Select(x => new Vector3(x.x + xOffset, x.y, elevation));
+        public static IEnumerable<Vector3> ToDxfVectorsWith(this IEnumerable<Vector2d> arr, float elevation, float xOffset, Vector2f offset)
+            => arr.Select(x => new Vector3(x.x + xOffset + offset.x, x.y + offset.y, elevation));
         /// <summary>
         /// Rotates current vector 90deg counterclockwise to create a normal vector (non-normalized)
         /// </summary>

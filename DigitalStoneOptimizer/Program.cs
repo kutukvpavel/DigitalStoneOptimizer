@@ -20,7 +20,16 @@ namespace DigitalStoneOptimizer
                     Console.WriteLine("Failed to load input data.");
                     return;
                 }
-                ApproximatedStone s = new ApproximatedStone(data, x.SheetThickness, x.DesiredOverlap);
+                ApproximatedStone s;
+                try
+                {
+                    s = new ApproximatedStone(data, x.SheetThickness, x.DesiredOverlap);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Console.WriteLine(ex);
+                    return;
+                }
                 Console.WriteLine($"Specified mode = {Enum.GetName(typeof(Modes), x.Mode)}");
                 switch (x.Mode)
                 {
@@ -43,7 +52,7 @@ namespace DigitalStoneOptimizer
 
         static void AssessProductionVolume(ApproximatedStone s, CliOptions options)
         {
-            var res = new MillingContext(s);
+            var res = new MillingContext(s, options.ToolDiameter);
             for (int i = 1; i <= options.NumberOfStones; i++)
             {
                 res.Calculate(i);
@@ -54,7 +63,7 @@ namespace DigitalStoneOptimizer
 
         static void GenerateMilling(ApproximatedStone s, CliOptions options)
         {
-            var res = new MillingContext(s);
+            var res = new MillingContext(s, options.ToolDiameter);
             res.Calculate(options.NumberOfStones);
             var doc = new DxfDocument();
             res.DrawDxf(doc);

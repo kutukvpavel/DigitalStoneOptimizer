@@ -25,5 +25,7 @@ namespace DigitalStoneOptimizer
         public float DesiredOverlap { get; set; }
         [Option('n', Required = false, Default = 1, HelpText = "[N]umber of stones to mill")]
         public int NumberOfStones { get; set; }
+        [Option('d', Required = false, Default = 0, HelpText = "Tool [D]iameter. Default = 0.")]
+        public float ToolDiameter { get; set; }
     }
 }

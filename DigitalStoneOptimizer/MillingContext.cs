@@ -1,4 +1,5 @@
-﻿using netDxf;
+﻿using g3;
+using netDxf;
 using netDxf.Tables;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,14 +8,16 @@ namespace DigitalStoneOptimizer
 {
     public class MillingContext
     {
-        public MillingContext(ApproximatedStone s)
+        public MillingContext(ApproximatedStone s, float toolDiameter)
         {
             /* Idea: sort all sections by their area and then try to fit them into each other. */
             _SortedSections = new ApproximatedStone(s.Sections.OrderByDescending(x => x.Poly.Bounds.Area));
+            ToolDiameter = toolDiameter;
         }
 
         #region Properties
 
+        public float ToolDiameter { get; }
         public List<PositionedStoneSection[]> PositionedSections { get; private set; }
         public List<StoneSection> UnableToFit { get; private set; }
         public int TotalSheets { get => PositionedSections.Count + UnableToFit.Count; }
@@ -96,9 +99,9 @@ namespace DigitalStoneOptimizer
                     var last = currentBin.Last().Model.Poly;
                     if (last.Holes.Count == 0) break;
                     var item = sections[i];
-                    if (last.Holes[0].Contains(item.Poly.Outer))
+                    if (last.Holes[0].FitsWithShift(item.Poly.Outer, out Vector2f shift, ToolDiameter))
                     {
-                        currentBin.Add(new PositionedStoneSection(item, currentElevation));
+                        currentBin.Add(new PositionedStoneSection(item, currentElevation, shift));
                         _UsefulVolume += (float)(item.Poly.Outer.Area - item.Poly.HoleArea) * item.Thickness;
                         sections.RemoveAt(i--);
                     }

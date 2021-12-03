@@ -1,7 +1,5 @@
 ﻿using g3;
 using netDxf;
-using netDxf.Entities;
-using netDxf.Objects;
 using netDxf.Tables;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -23,6 +21,7 @@ namespace DigitalStoneOptimizer
         public ApproximatedStone(StoneMeshData data, float step, float desiredOverlap) // strip width calculation - ????
         {
             double fraction = data.Mesh.GetBounds().Diagonal.z / step; //Height is not height! Diagonal vector somwhow is composed of (len,wid,height)
+            if (fraction < 2) throw new InvalidOperationException("Input stone is too thin. Check the units.");
             int numberOfSlices = (int)Math.Ceiling(fraction);
             Sections = new StoneSection[numberOfSlices];
             float currentLevel = (float)(data.Mesh.CachedBounds.Min.z

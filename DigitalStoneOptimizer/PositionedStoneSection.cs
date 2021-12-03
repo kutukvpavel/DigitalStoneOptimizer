@@ -1,4 +1,5 @@
-﻿using netDxf;
+﻿using g3;
+using netDxf;
 using netDxf.Entities;
 using netDxf.Objects;
 using netDxf.Tables;
@@ -12,10 +13,18 @@ namespace DigitalStoneOptimizer
         {
             Model = model;
             Elevation = elevation;
+            Shift = new Vector2f();
+        }
+        public PositionedStoneSection(StoneSection model, float elevation, Vector2f shift)
+        {
+            Model = model;
+            Elevation = elevation;
+            Shift = shift;
         }
 
         public StoneSection Model { get; }
         public float Elevation { get; }
+        public Vector2f Shift { get; }
         public float Top { get => Elevation + Model.Thickness; }
 
         public void DrawDxf(DxfDocument doc, Layer outerLayer, Layer innerLayer, float extraElevation = 0, float xOffset = 0)
@@ -25,16 +34,16 @@ namespace DigitalStoneOptimizer
             //Outer
             var g = new Group($"{el:F0} from {Model.Elevation:F0} and {extraElevation:F0}");
             g.Entities.Add(new Polyline(
-                Model.Poly.Outer.Vertices.ToDxfVectorsWithOffsetAndElevation(el, xOffset), true) { Layer = outerLayer });
+                Model.Poly.Outer.Vertices.ToDxfVectorsWith(el, xOffset, Shift), true) { Layer = outerLayer });
             g.Entities.Add(new Polyline(
-                Model.Poly.Outer.Vertices.ToDxfVectorsWithOffsetAndElevation(top, xOffset), true) { Layer = outerLayer });
+                Model.Poly.Outer.Vertices.ToDxfVectorsWith(top, xOffset, Shift), true) { Layer = outerLayer });
             //Inner
             if (Model.Poly.Holes.Any())
             {
                 g.Entities.Add(new Polyline(
-                    Model.Poly.Holes[0].Vertices.ToDxfVectorsWithOffsetAndElevation(el, xOffset), true) { Layer = innerLayer });
+                    Model.Poly.Holes[0].Vertices.ToDxfVectorsWith(el, xOffset, Shift), true) { Layer = innerLayer });
                 g.Entities.Add(new Polyline(
-                    Model.Poly.Holes[0].Vertices.ToDxfVectorsWithOffsetAndElevation(top, xOffset), true) { Layer = innerLayer });
+                    Model.Poly.Holes[0].Vertices.ToDxfVectorsWith(top, xOffset, Shift), true) { Layer = innerLayer });
             }
             doc.Groups.Add(g);
         }
