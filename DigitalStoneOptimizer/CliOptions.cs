@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using System.Collections.Generic;
 
 namespace DigitalStoneOptimizer
 {
@@ -12,7 +13,7 @@ namespace DigitalStoneOptimizer
     public class CliOptions
     {
         [Option('f', Required = true, HelpText = "STL model [F]ile path(es)")]
-        public string[] ModelFiles { get; set; }
+        public IEnumerable<string> ModelFiles { get; set; }
 
         [Option('m', Required = true, HelpText = "Application [M]ode")]
         public Modes Mode { get; set; }

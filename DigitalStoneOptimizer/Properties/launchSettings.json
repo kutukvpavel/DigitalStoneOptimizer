@@ -2,7 +2,7 @@
   "profiles": {
     "DigitalStoneOptimizer": {
       "commandName": "Project",
-      "commandLineArgs": "-f input.stl -m 1 -t 20 -o 50 -d 5"
+      "commandLineArgs": "-f new_stone.stl -m 1 -t 20 -o 50 -d 5"
     }
   }
 }

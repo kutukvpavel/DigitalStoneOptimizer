@@ -14,7 +14,7 @@ namespace DigitalStoneOptimizer
             Console.WriteLine("DigitalStone toolkit started.");
             Parser.Default.ParseArguments<CliOptions>(args).WithParsed(x =>
             {
-                x.ModelFiles = x.ModelFiles.Select(y => CheckPath(y)).ToArray();
+                x.ModelFiles = x.ModelFiles.Select(y => CheckPath(y));
                 var data = x.ModelFiles.Select(y => GeometryProvider.LoadStl(y));
                 if (data.Any(y => y == null))
                 {
