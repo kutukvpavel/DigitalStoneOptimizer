@@ -4,12 +4,14 @@ namespace DigitalStoneOptimizer
 {
     public class StoneMeshData
     {
-        public StoneMeshData(DMesh3 mesh, DMeshAABBTree3 spatial)
+        public StoneMeshData(DMesh3 mesh, DMeshAABBTree3 spatial, string name)
         {
             Mesh = mesh;
             Spatial = spatial;
+            Name = name;
         }
 
+        public string Name { get; }
         public DMesh3 Mesh { get; }
         public DMeshAABBTree3 Spatial { get; }
         public AxisAlignedBox3d Bounds { get => Mesh.CachedBounds; }

@@ -20,6 +20,7 @@ namespace DigitalStoneOptimizer
         }
         public ApproximatedStone(StoneMeshData data, float step, float desiredOverlap) // strip width calculation - ????
         {
+            OriginalData = data;
             double fraction = data.Mesh.GetBounds().Diagonal.z / step; //Height is not height! Diagonal vector somwhow is composed of (len,wid,height)
             if (fraction < 2) throw new InvalidOperationException("Input stone is too thin. Check the units.");
             int numberOfSlices = (int)Math.Ceiling(fraction);
@@ -27,7 +28,7 @@ namespace DigitalStoneOptimizer
             float currentLevel = (float)(data.Mesh.CachedBounds.Min.z
                 + step * (1 - Math.Ceiling(data.Mesh.CachedBounds.Diagonal.z / step) / 2) + data.Mesh.CachedBounds.Diagonal.z / 2);
             //First and last slices have no pair and have to be calculated separately
-            Sections[0] = new StoneSection(data.GetSectionPoints(currentLevel, RayAngleStep), step, currentLevel - step); //First and last sections don't have a hole
+            Sections[0] = new StoneSection(this, data.GetSectionPoints(currentLevel, RayAngleStep), step, currentLevel - step); //First and last sections don't have a hole
             Polygon2d lastSection = Sections[0].Poly.Outer;
             Polygon2d nextSection = null;
             int len = numberOfSlices - 1;
@@ -36,14 +37,15 @@ namespace DigitalStoneOptimizer
                 nextSection = data.GetSectionPoints(currentLevel + step, RayAngleStep);
                 var union = lastSection.FixedAngularStepUnion(nextSection);
                 var intersection = lastSection.FixedAngularStepIntersection(nextSection);
-                Sections[i] = new StoneSection(union, intersection, desiredOverlap, step, currentLevel);
+                Sections[i] = new StoneSection(this, union, intersection, desiredOverlap, step, currentLevel);
                 currentLevel += step;
                 lastSection = nextSection;
             }
-            Sections[^1] = new StoneSection(nextSection, step, currentLevel);
+            Sections[^1] = new StoneSection(this, nextSection, step, currentLevel);
             TotalHeight = Sections.Sum(x => x.Thickness);
         }
 
+        public StoneMeshData OriginalData { get; }
         public StoneSection[] Sections { get; }
         public float Elevation { get; set; }
         public float TotalHeight { get; }

@@ -1,4 +1,5 @@
 ﻿using g3;
+using MoreLinq;
 using netDxf;
 using netDxf.Tables;
 using System.Collections.Generic;
@@ -8,10 +9,11 @@ namespace DigitalStoneOptimizer
 {
     public class MillingContext
     {
-        public MillingContext(ApproximatedStone s, float toolDiameter)
+        public MillingContext(ApproximatedStone[] s, float toolDiameter)
         {
             /* Idea: sort all sections by their area and then try to fit them into each other. */
-            _SortedSections = new ApproximatedStone(s.Sections.OrderByDescending(x => x.Poly.Bounds.Area));
+            _SortedSections = new ApproximatedStone(s.Select(x => x.Sections).Flatten().Cast<StoneSection>()
+                .OrderByDescending(x => x.Poly.Bounds.Area));
             ToolDiameter = toolDiameter;
         }
 
@@ -32,6 +34,7 @@ namespace DigitalStoneOptimizer
             get => UnableToFit.Select(x => x.Elevation);
         }
         public float CompactizationFactor { get; private set; }
+        public int TotalSections { get => PositionedSections.Sum(x => x.Length) + UnableToFit.Count; }
 
         #endregion
 
@@ -65,7 +68,7 @@ namespace DigitalStoneOptimizer
             CompactizationFactor = (float)_SortedSections.Sections.Length * numberOfStonesToManufacture / TotalSheets;
         }
 
-        public void DrawDxf(DxfDocument doc)
+        public void DrawDxf(DxfDocument doc, bool flatten = false)
         {
             Layer l = new Layer("Positioned Stone Sections");
             doc.Layers.Add(l);
@@ -74,7 +77,7 @@ namespace DigitalStoneOptimizer
             {
                 foreach (var item in group)
                 {
-                    item.DrawDxf(doc, l, l, 0, xOffset);
+                    item.DrawDxf(doc, l, l, 0, xOffset, flatten);
                 }
                 xOffset += (float)(group[0].Model.Poly.Bounds.Diagonal.x * 1.2);
             }
@@ -83,7 +86,7 @@ namespace DigitalStoneOptimizer
             float extraElev = 0;
             foreach (var item in UnableToFit)
             {
-                new PositionedStoneSection(item, 0).DrawDxf(doc, l, l, extraElev, xOffset);
+                new PositionedStoneSection(item, 0).DrawDxf(doc, l, l, extraElev, xOffset, flatten);
                 xOffset += (float)(item.Poly.Bounds.Diagonal.x * 1.1);
                 extraElev += item.Thickness;
             }

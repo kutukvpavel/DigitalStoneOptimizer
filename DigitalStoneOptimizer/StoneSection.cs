@@ -11,26 +11,29 @@ namespace DigitalStoneOptimizer
     {
         public static float PenThickness { get; set; } = 5;
 
-        private StoneSection(float thickness, float elevation, float widthParam)
+        private StoneSection(ApproximatedStone parent, float thickness, float elevation, float widthParam)
         {
+            Parent = parent;
             Elevation = elevation;
             Thickness = thickness;
             Overlap = widthParam;
         }
-        public StoneSection(Polygon2d outerBoundary, Polygon2d innerBoundaryToInset, float overlap, float thickness, float elevation)
-            : this(thickness, elevation, overlap)
+        public StoneSection(ApproximatedStone parent, Polygon2d outerBoundary, Polygon2d innerBoundaryToInset, float overlap, float thickness, float elevation)
+            : this(parent, thickness, elevation, overlap)
         {
             Polygon2d inner = new Polygon2d(innerBoundaryToInset);
             inner.PolyOffset(inner.IsClockwise ? overlap : -overlap);
+            inner.RemoveSelfIntersections();
             Poly = new GeneralPolygon2d(outerBoundary);
             Poly.AddHole(inner, false, false);
         }
-        public StoneSection(Polygon2d currentBoundary, float thickness, float elevation)
-            : this(thickness, elevation, float.NaN)
+        public StoneSection(ApproximatedStone parent, Polygon2d currentBoundary, float thickness, float elevation)
+            : this(parent, thickness, elevation, float.NaN)
         {
             Poly = new GeneralPolygon2d(currentBoundary);
         }
 
+        public ApproximatedStone Parent { get; }
         public float Overlap { get; private set; }
         public GeneralPolygon2d Poly { get; private set; }
         public float Thickness { get; private set; }

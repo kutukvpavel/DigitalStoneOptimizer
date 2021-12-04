@@ -14,17 +14,17 @@ namespace DigitalStoneOptimizer
             Console.WriteLine("DigitalStone toolkit started.");
             Parser.Default.ParseArguments<CliOptions>(args).WithParsed(x =>
             {
-                x.ModelFile = CheckPath(x.ModelFile);
-                var data = GeometryProvider.LoadStl(x.ModelFile);
-                if (data == null)
+                x.ModelFiles = x.ModelFiles.Select(y => CheckPath(y)).ToArray();
+                var data = x.ModelFiles.Select(y => GeometryProvider.LoadStl(y));
+                if (data.Any(y => y == null))
                 {
                     Console.WriteLine("Failed to load input data.");
                     return;
                 }
-                ApproximatedStone s;
+                ApproximatedStone[] s;
                 try
                 {
-                    s = new ApproximatedStone(data, x.SheetThickness, x.DesiredOverlap);
+                    s = data.Select(y => new ApproximatedStone(y, x.SheetThickness, x.DesiredOverlap)).ToArray();
                 }
                 catch (InvalidOperationException ex)
                 {
@@ -35,7 +35,10 @@ namespace DigitalStoneOptimizer
                 switch (x.Mode)
                 {
                     case Modes.PreviewGeometry:
-                        PreviewGeometry(s, data, x);
+                        foreach (var item in s)
+                        {
+                            PreviewGeometry(item, x);
+                        }
                         break;
                     case Modes.GenerateMillingData:
                         GenerateMilling(s, x);
@@ -51,22 +54,22 @@ namespace DigitalStoneOptimizer
             });
         }
 
-        static void AssessProductionVolume(ApproximatedStone s, CliOptions options)
+        static void AssessProductionVolume(ApproximatedStone[] s, CliOptions options)
         {
             var res = new MillingContext(s, options.ToolDiameter);
             for (int i = 1; i <= options.NumberOfStones; i++)
             {
                 res.Calculate(i);
                 Console.WriteLine("---");
-                Console.WriteLine(GenerateOutputStats(s, res, i));
+                Console.WriteLine(GenerateOutputStats(res, i));
             }
         }
 
-        static void GenerateMilling(ApproximatedStone s, CliOptions options)
+        static void GenerateMilling(ApproximatedStone[] s, CliOptions options)
         {
             var res = new MillingContext(s, options.ToolDiameter);
             res.Calculate(options.NumberOfStones);
-            string stats = GenerateOutputStats(s, res, options.NumberOfStones);
+            string stats = GenerateOutputStats(res, options.NumberOfStones);
             Console.WriteLine(stats);
             var doc = new DxfDocument();
             res.DrawDxf(doc);
@@ -81,14 +84,14 @@ Unable to fit:
 {string.Join(Environment.NewLine, res.NonFitElevations.Select(x => x.ToString("F0")))}");
         }
 
-        static void PreviewGeometry(ApproximatedStone s, StoneMeshData d, CliOptions options)
+        static void PreviewGeometry(ApproximatedStone s, CliOptions options)
         {
             GeometryProvider.SaveStl(s.GetMesh(), CheckPath("geometry.stl"));
             GeometryProvider.SaveDxf(s, CheckPath("geometry.dxf"));
             //s.GetImage().SaveAsPng(CheckPath("output.png"));
             //Export bounding box dimensions
-            string stats = $@"Input mesh bounds: {d.Bounds:F0};
-dimensions: {d.Bounds.Diagonal:F0}.
+            string stats = $@"Input mesh bounds: {s.OriginalData.Bounds:F0};
+dimensions: {s.OriginalData.Bounds.Diagonal:F0}.
 
 Output height for machining: {s.TotalHeight:F0}.";
             Console.WriteLine(stats);
@@ -101,10 +104,10 @@ Output height for machining: {s.TotalHeight:F0}.";
             return Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, src));
         }
 
-        static string GenerateOutputStats(ApproximatedStone s, MillingContext res, int productionVolume)
+        static string GenerateOutputStats(MillingContext res, int productionVolume)
         {
             return @$"Stats: ProductionVolume = {productionVolume};
-Total Sections = {s.Sections.Length}, TotalSheets = {res.TotalSheets};
+Total Sections = {res.TotalSections}, TotalSheets = {res.TotalSheets};
 UnableToFit = {res.UnableToFit.Count}, FitSheets = {res.PositionedSections.Count};
 VolumeEfficiency = {res.VolumeEfficiency:F3}, Compactization = {res.CompactizationFactor:F2}.";
         }

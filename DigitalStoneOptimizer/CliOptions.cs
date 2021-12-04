@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using CommandLine;
+﻿using CommandLine;
 
 namespace DigitalStoneOptimizer
 {
@@ -14,8 +11,8 @@ namespace DigitalStoneOptimizer
 
     public class CliOptions
     {
-        [Option('f', Required = true, HelpText = "STL model [F]ile path")]
-        public string ModelFile { get; set; }
+        [Option('f', Required = true, HelpText = "STL model [F]ile path(es)")]
+        public string[] ModelFiles { get; set; }
 
         [Option('m', Required = true, HelpText = "Application [M]ode")]
         public Modes Mode { get; set; }
@@ -27,5 +24,6 @@ namespace DigitalStoneOptimizer
         public int NumberOfStones { get; set; }
         [Option('d', Required = false, Default = 0, HelpText = "Tool [D]iameter. Default = 0.")]
         public float ToolDiameter { get; set; }
+        [Option("flatten", Required = false, )]
     }
 }

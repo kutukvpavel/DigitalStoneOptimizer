@@ -24,7 +24,7 @@ namespace DigitalStoneOptimizer
                 var s = new DMeshAABBTree3(m);
                 m.GetBounds();
                 s.Build();
-                return new StoneMeshData(m, s);
+                return new StoneMeshData(m, s, System.IO.Path.GetFileNameWithoutExtension(path));
             }
             return null;
         }
@@ -129,7 +129,7 @@ namespace DigitalStoneOptimizer
         }
 
         /// <summary>
-        /// FOR FIXED ANGULAR STEP VERTICES ONLY
+        /// Works with any polygon (not just raytraced ones), but is not very efficient
         /// </summary>
         /// <param name="outer"></param>
         /// <param name="inner"></param>
@@ -147,7 +147,7 @@ namespace DigitalStoneOptimizer
             for (int i = 0; i < copy.VertexCount; i++)
             {
                 var item = copy.Vertices[i];
-                if (item.LengthSquared > outer.Vertices[i].LengthSquared)
+                if (!outer.Contains(item))
                 {
                     double currentDistance = outer.DistanceSquared(item, out int nearestSegment, out _);
                     if (currentDistance > lastDistance)
@@ -162,8 +162,72 @@ namespace DigitalStoneOptimizer
             return outer.Contains(copy);
         }
 
+        /// <summary>
+        /// Warning: removes segments
+        /// </summary>
+        /// <param name="poly"></param>
+        /// <returns></returns>
+        public static void RemoveSelfIntersections(this Polygon2d poly)
+        {
+            var segments = poly.SegmentItr().ToList();
+            for (int i = 0; i < segments.Count; i++)
+            {
+                int imo = i - 1;
+                int intersection = -1;
+                Vector2d point = new Vector2d();
+                for (int j = (i == segments.Count - 1) ? 1 : 0; j < imo; j++)
+                {
+                    if (segments[i].Intersects(segments[j], out Vector2d temp))
+                    {
+                        intersection = j;
+                        point = temp;
+                    }
+                }
+                if (intersection < 0)
+                {
+                    imo = segments.Count - (i == 0 ? 1 : 0);
+                    for (int j = i + 2; j < imo; j++)
+                    {
+                        if (segments[i].Intersects(segments[j], out Vector2d temp))
+                        {
+                            intersection = j;
+                            point = temp;
+                        }
+                    }
+                }
+                if (intersection > -1)
+                {
+                    int lower = i < intersection ? i : intersection;
+                    int higher = i < intersection ? intersection : i;
+                    if (2 * (higher - lower) > segments.Count)
+                    {
+                        segments.RemoveRange(higher, segments.Count - higher);
+                        segments.RemoveRange(0, lower + 1);
+                    }
+                    else
+                    {
+                        segments.RemoveRange(lower, higher - lower + 1);
+                    }
+                    segments.InsertRange(lower, new Segment2d[]
+                    {
+                        new Segment2d(segments[(lower < 1 ? segments.Count : lower) - 1].P1, point),
+                        new Segment2d(point, segments[lower].P0)
+                    });
+                    i = lower + 2;
+                }
+            }
+            poly.SetVertices(segments.Select(x => x.P0).ToList(), true);
+        }
+
         #region Extensions
 
+        public static bool Intersects(this Segment2d first, Segment2d second, out Vector2d point)
+        {
+            IntrSegment2Segment2 intersection = new IntrSegment2Segment2(first, second);
+            bool res = intersection.Find();
+            point = intersection.Point0;
+            return res;
+        }
         public static PointF ToPointF(this Vector2f v) => new PointF(v.x, v.y);
         public static PointF ToPointF(this Vector2d v) => new PointF((float)v.x, (float)v.y);
         public static ComplexPolygon ToComplexPolygon(this GeneralPolygon2d p)
