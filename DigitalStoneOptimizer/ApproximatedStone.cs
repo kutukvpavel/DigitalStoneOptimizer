@@ -41,10 +41,12 @@ namespace DigitalStoneOptimizer
                 lastSection = nextSection;
             }
             Sections[^1] = new StoneSection(nextSection, step, currentLevel);
+            TotalHeight = Sections.Sum(x => x.Thickness);
         }
 
         public StoneSection[] Sections { get; }
         public float Elevation { get; set; }
+        public float TotalHeight { get; }
 
         public PositionedStoneSection GetPositionedStoneSection(int i)
         {

@@ -13,7 +13,7 @@ namespace DigitalStoneOptimizer
     {
         private const float TwoEpsilon = 2 * float.Epsilon;
 
-        public static StoneMeshData LoadFbx(string path)
+        public static StoneMeshData LoadStl(string path)
         {
             DMesh3Builder builder = new DMesh3Builder();
             StandardMeshReader reader = new StandardMeshReader() { MeshBuilder = builder };
@@ -22,6 +22,7 @@ namespace DigitalStoneOptimizer
             {
                 var m = builder.Meshes[0];
                 var s = new DMeshAABBTree3(m);
+                m.GetBounds();
                 s.Build();
                 return new StoneMeshData(m, s);
             }
@@ -138,8 +139,7 @@ namespace DigitalStoneOptimizer
         public static bool FitsWithShift(this Polygon2d outer, Polygon2d inner, out Vector2f shift, float clearance = 0)
         {
             Polygon2d copy = new Polygon2d(inner);
-            if (copy.IsClockwise) clearance = -clearance;
-            copy.PolyOffset(clearance);
+            copy.PolyOffset(copy.IsClockwise ? -clearance : clearance);
             shift = new Vector2f();
 
             //Find a pair of vertices that are the furthest apart.

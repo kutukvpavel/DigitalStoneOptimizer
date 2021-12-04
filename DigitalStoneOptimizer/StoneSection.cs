@@ -20,23 +20,8 @@ namespace DigitalStoneOptimizer
         public StoneSection(Polygon2d outerBoundary, Polygon2d innerBoundaryToInset, float overlap, float thickness, float elevation)
             : this(thickness, elevation, overlap)
         {
-            /*if (lastBoundary.Contains(currentBoundary))
-            {
-                var t = lastBoundary;
-                lastBoundary = currentBoundary;
-                currentBoundary = t;
-            }*/
-            Polygon2d inner = new Polygon2d();
-            int len = innerBoundaryToInset.VertexCount - 1;
-            for (int i = 0; i < len; i++)
-            {
-                //Build inner path maintaining strip width
-                //Offset each point towards the center of an inscribed circle
-                inner.AppendVertex(
-                    GeometryProvider.OffsetPointAlongNormal(innerBoundaryToInset[i], innerBoundaryToInset[i + 1], overlap));
-            }
-            inner.AppendVertex( 
-                GeometryProvider.OffsetPointAlongNormal(innerBoundaryToInset.Vertices[^1], innerBoundaryToInset[0], overlap));
+            Polygon2d inner = new Polygon2d(innerBoundaryToInset);
+            inner.PolyOffset(inner.IsClockwise ? overlap : -overlap);
             Poly = new GeneralPolygon2d(outerBoundary);
             Poly.AddHole(inner, false, false);
         }

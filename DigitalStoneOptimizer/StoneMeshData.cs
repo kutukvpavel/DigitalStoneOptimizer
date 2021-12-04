@@ -12,6 +12,7 @@ namespace DigitalStoneOptimizer
 
         public DMesh3 Mesh { get; }
         public DMeshAABBTree3 Spatial { get; }
+        public AxisAlignedBox3d Bounds { get => Mesh.CachedBounds; }
 
         /// <summary>
         /// Get section points by tracing 360/AngleStep polar rays from (0,0,<paramref name="elevation"/>)

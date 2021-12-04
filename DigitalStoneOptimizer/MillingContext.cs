@@ -23,6 +23,15 @@ namespace DigitalStoneOptimizer
         public int TotalSheets { get => PositionedSections.Count + UnableToFit.Count; }
         public float TotalStockVolume { get => _MaxSheetArea.Sum(x => x.Value * x.Key * _TotalSheets[x.Key]); }
         public float VolumeEfficiency { get => _UsefulVolume / TotalStockVolume; }
+        public IEnumerable<IEnumerable<float>> PositionedElevations
+        {
+            get => PositionedSections.Select(x => x.Select(x => x.Model.Elevation));
+        }
+        public IEnumerable<float> NonFitElevations
+        {
+            get => UnableToFit.Select(x => x.Elevation);
+        }
+        public float CompactizationFactor { get; private set; }
 
         #endregion
 
@@ -53,6 +62,7 @@ namespace DigitalStoneOptimizer
             {
                 CalculateThicknessBin(item.Value, item.Key);
             }
+            CompactizationFactor = (float)_SortedSections.Sections.Length * numberOfStonesToManufacture / TotalSheets;
         }
 
         public void DrawDxf(DxfDocument doc)
