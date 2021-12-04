@@ -26,6 +26,7 @@ namespace DigitalStoneOptimizer
         public float Elevation { get; }
         public Vector2f Shift { get; }
         public float Top { get => Elevation + Model.Thickness; }
+        public string Name { get => $"{Model.Name} at {Elevation:F0}"; }
 
         public void DrawDxf(DxfDocument doc, Layer outerLayer, Layer innerLayer, float extraElevation = 0, float xOffset = 0,
             bool flatten = false)
@@ -33,7 +34,7 @@ namespace DigitalStoneOptimizer
             float el = Elevation + extraElevation;
             float top = Top + extraElevation;
             //Outer
-            var g = new Group($"{Model.Parent.OriginalData.Name}, {el:F0} from {Model.Elevation:F0} and {extraElevation:F0}");
+            var g = new Group($"{Name} + {extraElevation:F0}");
             g.Entities.Add(new Polyline(
                 Model.Poly.Outer.Vertices.ToDxfVectorsWith(flatten ? 0 : el, xOffset, Shift), true) { Layer = outerLayer });
             g.Entities.Add(new Polyline(

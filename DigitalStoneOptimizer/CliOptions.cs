@@ -24,6 +24,7 @@ namespace DigitalStoneOptimizer
         public int NumberOfStones { get; set; }
         [Option('d', Required = false, Default = 0, HelpText = "Tool [D]iameter. Default = 0.")]
         public float ToolDiameter { get; set; }
-        [Option("flatten", Required = false, )]
+        [Option("flatten", Required = false, Default = false, HelpText = "Flatten milling output drawing.")]
+        public bool FlattenMillingOutput { get; set; }
     }
 }

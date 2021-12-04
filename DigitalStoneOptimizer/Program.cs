@@ -72,22 +72,22 @@ namespace DigitalStoneOptimizer
             string stats = GenerateOutputStats(res, options.NumberOfStones);
             Console.WriteLine(stats);
             var doc = new DxfDocument();
-            res.DrawDxf(doc);
+            res.DrawDxf(doc, options.FlattenMillingOutput);
             doc.Save(CheckPath("positioned.dxf"));
             File.WriteAllText("milling.txt",
                 $@"{stats}
 
 Positioned bins:
-{string.Join(Environment.NewLine, res.PositionedElevations.Select(x => string.Join(", ", x.Select(y => y.ToString("F0")))))}
+{string.Join(Environment.NewLine, res.PositionedSections.Select(x => string.Join(", ", x.Select(y => y.Name))))}
 
 Unable to fit:
-{string.Join(Environment.NewLine, res.NonFitElevations.Select(x => x.ToString("F0")))}");
+{string.Join(Environment.NewLine, res.UnableToFit.Select(x => x.Name))}");
         }
 
         static void PreviewGeometry(ApproximatedStone s, CliOptions options)
         {
-            GeometryProvider.SaveStl(s.GetMesh(), CheckPath("geometry.stl"));
-            GeometryProvider.SaveDxf(s, CheckPath("geometry.dxf"));
+            GeometryProvider.SaveStl(s.GetMesh(), CheckPath($"geometry_{s.OriginalData.Name}.stl"));
+            GeometryProvider.SaveDxf(s, CheckPath($"geometry_{s.OriginalData.Name}.dxf"));
             //s.GetImage().SaveAsPng(CheckPath("output.png"));
             //Export bounding box dimensions
             string stats = $@"Input mesh bounds: {s.OriginalData.Bounds:F0};
@@ -95,7 +95,7 @@ dimensions: {s.OriginalData.Bounds.Diagonal:F0}.
 
 Output height for machining: {s.TotalHeight:F0}.";
             Console.WriteLine(stats);
-            File.WriteAllText("geometry.txt", stats);
+            File.WriteAllText($"geometry_{s.OriginalData.Name}.txt", stats);
         }
 
         static string CheckPath(string src)

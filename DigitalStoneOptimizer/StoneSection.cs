@@ -39,6 +39,7 @@ namespace DigitalStoneOptimizer
         public float Thickness { get; private set; }
         public float Elevation { get; private set; }
         public float Top { get => Elevation + Thickness; }
+        public string Name { get => $"{Parent.OriginalData.Name} - {Elevation:F0}"; }
 
         public Image<Rgba32> GetImage()
         {
